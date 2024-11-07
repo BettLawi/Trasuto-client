@@ -1,35 +1,55 @@
-name: Deploy to Vercel and GitHub Pages
+ name: Deploy
 
-on:
-  push:
-    branches:
-      - main
+ on:
+   push:
+     branches:
+       - main
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+ jobs:
+   build:
+     name: Build
+     runs-on: ubuntu-latest
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
+     strategy:
+       matrix:
+         node-version: '16' # Specify the Node.js version you want to use
 
-      - name: Install dependencies
-        run: npm install
+     steps:
+       - name: Checkout repo
+         uses: actions/checkout@v2
 
-      - name: Build project
-        run: npm run build
+       - name: Setup Node
+         uses: actions/setup-node@v3
+         with:
+           node-version: ${{ matrix.node-version }}
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+       - name: Install dependencies
+         run: npm install
 
-      - name: Deploy to Vercel 
-        run: |
-          curl -fsSL https://vercel.com/download | bash
-          vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+       - name: Build project
+         run: npm run build
+
+       - name: Upload production-ready build files
+         uses: actions/upload-artifact@v2
+         with:
+           name: production-files
+           path: ./dist
+
+   deploy:
+     name: Deploy
+     needs: build
+     runs-on: ubuntu-latest
+     if: github.ref == 'refs/heads/main'
+
+     steps:
+       - name: Download artifact
+         uses: actions/download-artifact@v2
+         with:
+           name: production-files
+           path: ./dist
+
+       - name: Deploy to GitHub Pages
+         uses: peaceiris/actions-gh-pages@v3
+         with:
+           github_token: ${{ secrets.GITHUB_TOKEN }}
+           publish_dir: ./dist
