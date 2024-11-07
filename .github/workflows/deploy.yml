@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to Vercel and GitHub Pages
 
 on:
   push:
@@ -28,3 +28,8 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+
+      - name: Deploy to Vercel 
+        run: |
+          curl -fsSL https://vercel.com/download | bash
+          vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
